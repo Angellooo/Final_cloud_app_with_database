@@ -53,20 +53,31 @@
                 {% for question in questions %}
                 <div class="card-header"><h5>{{ question.question_text}}</h5></div>
                     {% csrf_token %}
-                    <div class="form-group">
-                        <!-- ... for each choice in the question ... -->
-                        {% for choice in selected_ids %}
-                        <p>Hello</p>
-                        <div class="form-check">
-                            <label class="form-check-label">
-                                <input type="checkbox" name="choice_{{choice.id}}"
-                                    class="form-check-input" id="{{choice.id}}"
-                                    value="{{choice.id}}">{{ choice.choice_text }}
-                            </label>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
+                    <!-- ... for each choice in the question ... -->
+                    {% for choice in question.choice_set.all %}
+                        <!-- ... If the choice is correct and is in the selected choices then ... -->
+                        {% if choice.is_correct == True and choice.id in selected_ids_list %}
+                            <div class="form-check">
+                                <span class="text-success" name="choice_{{choice.id}}" id="{{choice.id}}">Correct answer: {{ choice.choice_text }}</span>
+                            </div>
+                        <!-- ... If the choice is correct and is NOT in the selected choices then ... -->
+                        {% elif choice.is_correct == True and choice.id not in selected_ids_list %}
+                            <div class="form-check">
+                                <span class="text-warning" name="choice_{{choice.id}}" id="{{choice.id}}">Not selected: {{ choice.choice_text }}</span>
+                            </div>
+                        <!-- ... If the choice is NOT correct but is in the selected choices then ... -->
+                        {% elif choice.is_correct == False and choice.id in selected_ids_list %}
+                            <div class="form-check">
+                                <span class="text-danger" name="choice_{{choice.id}}" id="{{choice.id}}">Incorrect answer: {{ choice.choice_text }}</span>
+                            </div>
+                        <!-- ... If the choice is NOT correct and is NOT in the selected choices then ... -->
+                        {% elif choice.is_correct == False and choice.id not in selected_ids_list %}
+                            <div class="form-check">
+                                <span class="text-dark" name="choice_{{choice.id}}" id="{{choice.id}}">{{ choice.choice_text }}</span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                
                 {% endfor %}
             </div>
         </div>

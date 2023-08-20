@@ -120,7 +120,7 @@ def submit(request, course_id, lesson_id):
     return HttpResponseRedirect(reverse(viewname='onlinecourse:show_exam_result', args=(course_id, lesson_id, submission.id)))
     
 
-# <HINT> A example method to collect the selected choices from the exam form from the request object
+# A example method to collect the selected choices from the exam form from the request object
 def extract_answers(request):
     submitted_answers = []
     for key in request.POST:
@@ -149,32 +149,37 @@ def show_exam_result(request, course_id, lesson_id, submission_id):
     final_grade = 0
     # Lesson object to pass objects to context later
     lesson = Lesson.objects.get(pk=lesson_id)
-
+    # Selected ids LIST
+    selected_ids_list = []
     # Iterate of all choices in submission
     for choice in all_choices:
+        #Adding the id to selected_ids_list
+        selected_ids_list.append(choice.id)
         # Getting the choice object
         choice_obj = Choice.objects.get(pk=choice.id)
         # Getting the question object
         question_obj = Question.objects.get(pk=choice_obj.question.id)
-        # --------------- If the choice is correct, sum the grade value to final_grade
+        # Call to is_get_score function of question object to calculate if learner get the total score
         is_get_score = question_obj.is_get_score(all_choices)
         if is_get_score[0] == True:
+            # Calculate corresponding points dividing the total correct questions by the selected correct ones
             points = (int(question_obj.grade) // is_get_score[1])
             final_grade = final_grade + points
             print('{} points added in question {}'.format(points, question_obj.id))
-        
-        '''
-        if (choice_obj.is_correct == False) and (final_grade>=int(question_obj.grade)):
-            points = int(question_obj.grade)
-            print('{} points less in question {}'.format(points, question_obj.id))
-            final_grade = final_grade - points
-        '''
 
+    # Course object
     context['course'] = course
+    # Questions querySet
     context['questions'] = lesson.question_set.all()
+    # All selected choices querySet
     context['selected_ids'] = all_choices
+    # All selected choices list
+    context['selected_ids_list'] = selected_ids_list
+    # Grade of the question integer
     context['grade'] = final_grade
     
-    print(str(final_grade))
+    # Made with love by Angello L Gonzalez <3
+
+    print('Final grade: {}'.format(str(final_grade)))
     return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
 
