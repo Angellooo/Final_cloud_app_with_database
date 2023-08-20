@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 # <HINT> Import any new Models here
-from .models import Course, Enrollment, Question, Choice, Submission
+from .models import Course, Enrollment, Lesson, Question, Choice, Submission
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
@@ -110,14 +110,14 @@ def enroll(request, course_id):
          # Collect the selected choices from exam form
          # Add each selected choice object to the submission object
          # Redirect to show_exam_result with the submission id
-def submit(request, course_id):
+def submit(request, course_id, lesson_id):
     course = get_object_or_404(Course, pk=course_id)
     enrollment = Enrollment.objects.get(user=request.user, course=course)
     submitted_answers = extract_answers(request)
     submission = Submission.objects.create(enrollment=enrollment)
     submission.save()
     submission.choices.add(*submitted_answers)
-    return HttpResponseRedirect(reverse(viewname='onlinecourse:show_exam_result', args=(course_id, submission.id,)))
+    return HttpResponseRedirect(reverse(viewname='onlinecourse:show_exam_result', args=(course_id, lesson_id, submission.id)))
     
 
 # <HINT> A example method to collect the selected choices from the exam form from the request object
@@ -137,7 +137,8 @@ def extract_answers(request):
         # Get the selected choice ids from the submission record
         # For each selected choice, check if it is a correct answer or not
         # Calculate the total score
-def show_exam_result(request, course_id, submission_id):
+def show_exam_result(request, course_id, lesson_id, submission_id):
+    print('THE LESSON ID IS: {}'.format(lesson_id))
     context = {}
     # Getting the course object
     course = Course.objects.get(pk=course_id)
@@ -146,7 +147,9 @@ def show_exam_result(request, course_id, submission_id):
     all_choices = submission.choices.all()
     # Initialization of final_grade to show the grade
     final_grade = 0
-    
+    # Lesson object to pass objects to context later
+    lesson = Lesson.objects.get(pk=lesson_id)
+
     # Iterate of all choices in submission
     for choice in all_choices:
         # Getting the choice object
@@ -166,6 +169,12 @@ def show_exam_result(request, course_id, submission_id):
             print('{} points less in question {}'.format(points, question_obj.id))
             final_grade = final_grade - points
         '''
+
+    context['course'] = course
+    context['questions'] = lesson.question_set.all()
+    context['selected_ids'] = all_choices
+    context['grade'] = final_grade
+    
     print(str(final_grade))
-    return render() #with context
+    return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
 
